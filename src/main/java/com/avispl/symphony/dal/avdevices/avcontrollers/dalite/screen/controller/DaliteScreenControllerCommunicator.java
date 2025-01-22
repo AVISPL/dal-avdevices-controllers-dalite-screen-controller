@@ -36,6 +36,11 @@ import java.util.regex.Pattern;
 public class DaliteScreenControllerCommunicator extends SshCommunicator implements Monitorable, Controller {
 
     /**
+     * Number of Preset
+     */
+    private final static int numberOfPreset = 2;
+
+    /**
      * cache to store key and value
      */
     private final Map<String, String> cacheKeyAndValue = new HashMap<>();
@@ -179,13 +184,13 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
                     populateStats(data, stats, NetworkInformation.class, DaLiteConstant.NETWORK_SETTINGS);
                     break;
                 case VERSION:
-                    populateStats(data, stats, VersionInformation.class, "");
+                    populateStats(data, stats, VersionInformation.class, DaLiteConstant.EMPTY);
                     break;
                 case SCREEN_INFO:
-                    populateStats(data, stats, ScreenInformation.class, "ScreenInfo");
+                    populateStats(data, stats, ScreenInformation.class, DaLiteConstant.SCREEN_INFO);
                     break;
                 case FACTORY_RESET:
-                    populateStats(data, stats, FactoryResetSoftware.class, "");
+                    populateStats(data, stats, FactoryResetSoftware.class, DaLiteConstant.SYSTEM);
                     break;
                 case SERIAL_NUMBER:
                     data = handleResponse(command.getCommand(), data);
@@ -196,13 +201,23 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
                     }
                     break;
                 case SCREEN_POSITION:
-                    if ("None".equals(data)) {
+                    if (DaLiteConstant.NONE.equals(data)) {
                         continue;
                     }
                     data = handleResponse(command.getCommand(), data);
                     addAdvancedControlProperties(advancedControllableProperty, controlStats,
-                            createSlider(controlStats, "ScreenInfo#Position(%)", "0", "100", 0f, 100f, Float.valueOf(data)), data);
-                    controlStats.put("ScreenInfo#PositionCurrentValue(%)", data);
+                            createSlider(controlStats, DaLiteConstant.SYSTEM + DaLiteConstant.HASH + "Position(%)", "0", "100", 0f, 100f, Float.valueOf(data)), data);
+                    controlStats.put(DaLiteConstant.SYSTEM + DaLiteConstant.HASH + "PositionCurrentValue(%)", data);
+                    break;
+                case PRESET_NAME:
+                    for (int i = 1; i <= numberOfPreset; i++) {
+                        String group = command.getName() + i;
+                        data = handleResponse(String.format(command.getCommand(), i), cacheKeyAndValue.get(group));
+                        stats.put(group + DaLiteConstant.HASH + "Number", String.valueOf(i));
+                        stats.put(group + DaLiteConstant.HASH + "Name", data.contains("not set") ? DaLiteConstant.NONE : data);
+                        addAdvancedControlProperties(advancedControllableProperty, controlStats,
+                                createButton(group + DaLiteConstant.HASH + DaLiteConstant.RECALL, DaLiteConstant.RECALL, DaLiteConstant.RECALLING, 0L), DaLiteConstant.EMPTY);
+                    }
                     break;
                 default:
                     logger.debug(String.format("the command %s doesn't support", command.getName()));
@@ -210,7 +225,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
             }
         }
         addAdvancedControlProperties(advancedControllableProperty, controlStats,
-                createButton(DaLiteConstant.SYSTEM_REBOOT, DaLiteConstant.REBOOT, DaLiteConstant.REBOOTING, 0L), "");
+                createButton(DaLiteConstant.SYSTEM + DaLiteConstant.HASH + DaLiteConstant.SYSTEM_REBOOT, DaLiteConstant.REBOOT, DaLiteConstant.REBOOTING, 0L), "");
     }
 
     private <E extends Enum<E>> void populateStats(String response, Map<String, String> stats, Class<E> enumClass, String prefix) {
@@ -220,7 +235,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
                 Method methodName = item.getClass().getMethod("getName");
                 String value = methodValue.invoke(item).toString();
                 String name = methodName.invoke(item).toString();
-                String key = (StringUtils.isNotNullOrEmpty(prefix) ? prefix + DaLiteConstant.HASH : "") + name;
+                String key = (StringUtils.isNotNullOrEmpty(prefix) ? prefix + DaLiteConstant.HASH : DaLiteConstant.EMPTY) + name;
                 try {
                     stats.put(key, uppercaseFirstCharacter(extractResponseValue(response, value)));
                 } catch (Exception e) {
@@ -261,8 +276,8 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
     }
 
     private String handleResponse(String command, String response) {
-        return response.replaceAll(command, "")
-                .replaceAll("OK", "").replaceAll(">", "").trim();
+        return response.replaceAll(command, DaLiteConstant.EMPTY)
+                .replaceAll("OK", DaLiteConstant.EMPTY).replaceAll(">", DaLiteConstant.EMPTY).trim();
     }
 
     /**
@@ -273,7 +288,13 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
     private void retrieveMonitoring() throws FailedLoginException {
         for (DaLiteCommand command : DaLiteCommand.values()) {
             if (command.isMonitoring() || isConfigManagement) {
-                sendCommandDetails(command.getCommand(), command.getName());
+                if (command.equals(DaLiteCommand.PRESET_NAME)) {
+                    for (int i = 1; i <= numberOfPreset; i++) {
+                        sendCommandDetails(String.format(command.getCommand(), i), command.getName() + i);
+                    }
+                } else {
+                    sendCommandDetails(command.getCommand(), command.getName());
+                }
             }
         }
     }
@@ -309,9 +330,9 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
      * Removes any existing property with the same name before adding the new one.
      *
      * @param advancedControllableProperties the list to update
-     * @param stats the map to update with the property's value
-     * @param property the property to add or update
-     * @param value the value associated with the property
+     * @param stats                          the map to update with the property's value
+     * @param property                       the property to add or update
+     * @param value                          the value associated with the property
      */
     private void addAdvancedControlProperties(List<AdvancedControllableProperty> advancedControllableProperties, Map<String, String> stats, AdvancedControllableProperty property, String value) {
         if (property != null) {

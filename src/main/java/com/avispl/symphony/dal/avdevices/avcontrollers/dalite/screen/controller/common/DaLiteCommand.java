@@ -19,18 +19,13 @@ public enum DaLiteCommand {
 	SCREEN_INFO("ScreenInfo", "screen get-info", true),
 	SERIAL_NUMBER("SerialNumber", "system serial-number", true),
 	SCREEN_POSITION("ScreenPosition", "screen position get", false),
+	PRESET_NAME("ScreenPreset", "screen preset name %s get", true),
 	;
-	public static final String STREAMING_MODE = "streaming mode set ";
+	public static final String PRESET_RECALL = "screen preset recall %s";
 	public static final String SYSTEM_REBOOT = "system reboot";
-	public static final String VIDEO_COMMAND = "video mute ";
-	public static final String AUDIO_COMMAND = "audio master mute ";
+	public static final String SCREEN_POSITION_CONTROL = "screen position set %s";
 
-	/**
-	 * VaddioCommand
-	 *
-	 * @name name of {@link #name}
-	 * @command command of {@link #command}
-	 */
+
 	DaLiteCommand(String name, String command, boolean isMonitoring) {
 		this.name = name;
 		this.command = command;

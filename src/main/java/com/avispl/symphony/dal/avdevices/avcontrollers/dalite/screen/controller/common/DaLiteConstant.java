@@ -28,7 +28,11 @@ public class DaLiteConstant {
     public static final String EMPTY = "";
     public static final String SPACE = " ";
     public static final String SYSTEM_REBOOT = "SystemReboot";
-    public static final String REBOOT = "Reboot Now";
+    public static final String REBOOT = "Reboot";
     public static final String REBOOTING = "Rebooting";
+    public static final String RECALL = "Recall";
+    public static final String RECALLING = "Recalling";
     public static final String TRUE = "True";
+    public static final String SCREEN_INFO = "ScreenInfo";
+    public static final String SYSTEM = "System";
 }
