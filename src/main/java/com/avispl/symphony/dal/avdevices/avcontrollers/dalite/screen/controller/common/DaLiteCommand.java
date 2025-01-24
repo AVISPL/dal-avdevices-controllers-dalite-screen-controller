@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 AVI-SPL, Inc. All Rights Reserved.
+ * Copyright (c) 2025 AVI-SPL, Inc. All Rights Reserved.
  */
 
 package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.common;
@@ -24,6 +24,9 @@ public enum DaLiteCommand {
 	public static final String PRESET_RECALL = "screen preset recall %s";
 	public static final String SYSTEM_REBOOT = "system reboot";
 	public static final String SCREEN_POSITION_CONTROL = "screen position set %s";
+	public static final String MOVE_UP = "screen move up";
+	public static final String MOVE_DOWN = "screen move down";
+	public static final String STOP = "screen move stop";
 
 
 	DaLiteCommand(String name, String command, boolean isMonitoring) {

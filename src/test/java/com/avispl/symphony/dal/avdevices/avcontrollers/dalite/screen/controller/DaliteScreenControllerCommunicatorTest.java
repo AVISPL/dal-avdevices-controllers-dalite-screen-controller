@@ -1,21 +1,18 @@
 /*
- *  Copyright (c) 2023 AVI-SPL, Inc. All Rights Reserved.
+ *  Copyright (c) 2025 AVI-SPL, Inc. All Rights Reserved.
  */
 package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller;
 
-import java.net.SocketTimeoutException;
-import java.util.List;
-import java.util.Map;
-
+import com.avispl.symphony.api.dal.dto.control.AdvancedControllableProperty;
+import com.avispl.symphony.api.dal.dto.control.ControllableProperty;
+import com.avispl.symphony.api.dal.dto.monitor.ExtendedStatistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.avispl.symphony.api.dal.dto.control.AdvancedControllableProperty;
-import com.avispl.symphony.api.dal.dto.control.ControllableProperty;
-import com.avispl.symphony.api.dal.dto.monitor.ExtendedStatistics;
-import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.common.DaLiteConstant;
+import java.util.List;
+import java.util.Map;
 
 /**
  * DaliteScreenControllerCommunicatorTest class
@@ -49,8 +46,8 @@ public class DaliteScreenControllerCommunicatorTest {
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
 		List<AdvancedControllableProperty> advancedControllableProperties = extendedStatistics.getControllableProperties();
-		Assertions.assertEquals(24, stats.size());
-		Assertions.assertEquals(2, advancedControllableProperties.size());
+		Assertions.assertEquals(29, stats.size());
+		Assertions.assertEquals(7, advancedControllableProperties.size());
 	}
 
 	/**
@@ -63,6 +60,34 @@ public class DaliteScreenControllerCommunicatorTest {
 		daliteScreenControllerCommunicator.setConfigManagement("false");
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
-		Assertions.assertEquals(21, stats.size());
+		Assertions.assertEquals(25, stats.size());
+	}
+
+	@Test
+	void testPosition() throws Exception {
+		daliteScreenControllerCommunicator.setConfigManagement("true");
+		daliteScreenControllerCommunicator.getMultipleStatistics();
+		ControllableProperty controllableProperty = new ControllableProperty();
+		String key = "ScreenControl#Position(%)";
+		String value = "75.0";
+		controllableProperty.setValue(value);
+		controllableProperty.setProperty(key);
+		daliteScreenControllerCommunicator.controlProperty(controllableProperty);
+		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
+		Map<String, String> stats = extendedStatistics.getStatistics();
+	}
+
+	@Test
+	void testPreset() throws Exception {
+		daliteScreenControllerCommunicator.setConfigManagement("true");
+		daliteScreenControllerCommunicator.getMultipleStatistics();
+		ControllableProperty controllableProperty = new ControllableProperty();
+		String key = "Preset#AVI Preset";
+		String value = "0";
+		controllableProperty.setValue(value);
+		controllableProperty.setProperty(key);
+		daliteScreenControllerCommunicator.controlProperty(controllableProperty);
+		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
+		Map<String, String> stats = extendedStatistics.getStatistics();
 	}
 }

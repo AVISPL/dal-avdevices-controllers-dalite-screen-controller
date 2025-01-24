@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2023 AVI-SPL, Inc. All Rights Reserved.
+ * Copyright (c) 2025 AVI-SPL, Inc. All Rights Reserved.
  */
+
 package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller;
 
 import com.avispl.symphony.api.dal.control.Controller;
@@ -36,9 +37,24 @@ import java.util.regex.Pattern;
 public class DaliteScreenControllerCommunicator extends SshCommunicator implements Monitorable, Controller {
 
     /**
+     *
+     */
+    private static final int controlSSHTimeout = 3000;
+
+    /**
+     * Set back to default timeout value in {@link SshCommunicator}
+     */
+    private static final int statisticsSSHTimeout = 30000;
+
+    /**
      * Number of Preset
      */
     private final static int numberOfPreset = 2;
+
+    /**
+     * List of preset name
+     */
+    private final List<String> presetNames = new ArrayList<>();
 
     /**
      * cache to store key and value
@@ -114,16 +130,16 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
         Map<String, String> controlStats = new HashMap<>();
         reentrantLock.lock();
         try {
+            convertConfigManagement();
             if (!isEmergencyDelivery) {
-                convertConfigManagement();
                 retrieveMonitoring();
-                populateMonitoringAndControlling(stats, controlStats, advancedControllableProperty);
-                if (isConfigManagement) {
-                    stats.putAll(controlStats);
-                    extendedStatistics.setControllableProperties(advancedControllableProperty);
-                }
-                extendedStatistics.setStatistics(stats);
             }
+            populateMonitoringAndControlling(stats, controlStats, advancedControllableProperty);
+            if (isConfigManagement) {
+                stats.putAll(controlStats);
+                extendedStatistics.setControllableProperties(advancedControllableProperty);
+            }
+            extendedStatistics.setStatistics(stats);
             localExtendedStatistics = extendedStatistics;
             isEmergencyDelivery = false;
         } finally {
@@ -154,7 +170,55 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
      */
     @Override
     public void controlProperty(ControllableProperty controllableProperty) throws Exception {
+        reentrantLock.lock();
+        try {
+            this.timeout = controlSSHTimeout;
+            if (localExtendedStatistics == null || localExtendedStatistics.getStatistics() == null) {
+                return;
+            }
+            isEmergencyDelivery = true;
+            String value = String.valueOf(controllableProperty.getValue());
+            String property = controllableProperty.getProperty();
+            String keyName = property;
+            if (property.contains(DaLiteConstant.HASH)) {
+                String[] group = property.split(DaLiteConstant.HASH);
+                keyName = group[1];
+            }
 
+            switch (keyName) {
+                case DaLiteConstant.REBOOT:
+                    sendControlCommand(keyName, DaLiteCommand.SYSTEM_REBOOT);
+                    break;
+                case "MoveUp":
+                    sendControlCommand(keyName, DaLiteCommand.MOVE_UP);
+                    break;
+                case "MoveDown":
+                    sendControlCommand(keyName, DaLiteCommand.MOVE_DOWN);
+                    break;
+                case "MoveStop":
+                    sendControlCommand(keyName, DaLiteCommand.STOP);
+                    break;
+                case "Position(%)":
+                    sendControlCommand(keyName, String.format(DaLiteCommand.SCREEN_POSITION_CONTROL, (int) Float.parseFloat(value)));
+                    break;
+                default:
+                    for (int i = 1; i <= numberOfPreset; i++) {
+                        if (keyName.equals(presetNames.get(i - 1))) {
+                            sendControlCommand(keyName, String.format(DaLiteCommand.PRESET_RECALL, i));
+                            break;
+                        }
+                    }
+                    logger.debug("the property doesn't support" + keyName);
+                    break;
+            }
+            if (!keyName.equals(DaLiteConstant.REBOOT)) {
+                Thread.sleep(5000);
+                updateScreenPositionValue();
+            }
+        } finally {
+            this.timeout = statisticsSSHTimeout;
+            reentrantLock.unlock();
+        }
     }
 
     /**
@@ -177,8 +241,10 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
      * @param advancedControllableProperty the advancedControllableProperty are AdvancedControllableProperty instance
      */
     private void populateMonitoringAndControlling(Map<String, String> stats, Map<String, String> controlStats, List<AdvancedControllableProperty> advancedControllableProperty) {
+        populateButtonControl(controlStats, advancedControllableProperty);
         for (DaLiteCommand command : DaLiteCommand.values()) {
             String data = StringUtils.isNullOrEmpty(cacheKeyAndValue.get(command.getName())) ? DaLiteConstant.NONE : cacheKeyAndValue.get(command.getName());
+            presetNames.clear();
             switch (command) {
                 case NETWORK_INFO:
                     populateStats(data, stats, NetworkInformation.class, DaLiteConstant.NETWORK_SETTINGS);
@@ -206,17 +272,17 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
                     }
                     data = handleResponse(command.getCommand(), data);
                     addAdvancedControlProperties(advancedControllableProperty, controlStats,
-                            createSlider(controlStats, DaLiteConstant.SYSTEM + DaLiteConstant.HASH + "Position(%)", "0", "100", 0f, 100f, Float.valueOf(data)), data);
-                    controlStats.put(DaLiteConstant.SYSTEM + DaLiteConstant.HASH + "PositionCurrentValue(%)", data);
+                            createSlider(controlStats, DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "Position(%)", "0", "100", 0f, 100f, Float.valueOf(data)), data);
+                    controlStats.put(DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "PositionCurrentValue(%)", data);
                     break;
                 case PRESET_NAME:
                     for (int i = 1; i <= numberOfPreset; i++) {
-                        String group = command.getName() + i;
-                        data = handleResponse(String.format(command.getCommand(), i), cacheKeyAndValue.get(group));
-                        stats.put(group + DaLiteConstant.HASH + "Number", String.valueOf(i));
-                        stats.put(group + DaLiteConstant.HASH + "Name", data.contains("not set") ? DaLiteConstant.NONE : data);
+                        String group = command.getName();
+                        data = handleResponse(String.format(command.getCommand(), i), cacheKeyAndValue.get("Preset" + i));
+                        String name = data.contains("not set") ? ("Preset" + i) : data;
+                        presetNames.add(name);
                         addAdvancedControlProperties(advancedControllableProperty, controlStats,
-                                createButton(group + DaLiteConstant.HASH + DaLiteConstant.RECALL, DaLiteConstant.RECALL, DaLiteConstant.RECALLING, 0L), DaLiteConstant.EMPTY);
+                                createButton(group + DaLiteConstant.HASH + name, DaLiteConstant.RECALL, DaLiteConstant.RECALLING, 0L), DaLiteConstant.EMPTY);
                     }
                     break;
                 default:
@@ -224,10 +290,48 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
                     break;
             }
         }
-        addAdvancedControlProperties(advancedControllableProperty, controlStats,
-                createButton(DaLiteConstant.SYSTEM + DaLiteConstant.HASH + DaLiteConstant.SYSTEM_REBOOT, DaLiteConstant.REBOOT, DaLiteConstant.REBOOTING, 0L), "");
     }
 
+    /**
+     * Populates the control buttons into the provided lists for control statistics and advanced controllable properties.
+     * Adds buttons for system reboot, screen movement (up, down, stop) to the control map and advanced control properties.
+     *
+     * @param controlStats                 containing the current control statistics.
+     * @param advancedControllableProperty to which the controls will be added.
+     */
+    private void populateButtonControl(Map<String, String> controlStats, List<AdvancedControllableProperty> advancedControllableProperty) {
+        addAdvancedControlProperties(advancedControllableProperty, controlStats,
+                createButton(DaLiteConstant.SYSTEM + DaLiteConstant.HASH + DaLiteConstant.SYSTEM_REBOOT, DaLiteConstant.REBOOT, DaLiteConstant.REBOOTING, 0L), "");
+        addAdvancedControlProperties(advancedControllableProperty, controlStats,
+                createButton(DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "MoveUp", "Up", "Moving", 0L), "");
+        addAdvancedControlProperties(advancedControllableProperty, controlStats,
+                createButton(DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "MoveDown", "Down", "Moving", 0L), "");
+        addAdvancedControlProperties(advancedControllableProperty, controlStats,
+                createButton(DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "MoveStop", "Stop", "Moving", 0L), "");
+    }
+
+    /**
+     * Updates the current screen position value by sending the appropriate command and handling the response.
+     * If successful, the screen position value is retrieved.
+     */
+    private void updateScreenPositionValue() {
+        try {
+            sendCommandDetails(DaLiteCommand.SCREEN_POSITION.getCommand(), DaLiteCommand.SCREEN_POSITION.getName());
+        } catch (Exception e) {
+            logger.error("Error when get screen position", e);
+        }
+    }
+
+    /**
+     * Populates a stats map with key-value pairs extracted from a response string using an enum.
+     * Values are extracted from the response using the enum constant values.
+     *
+     * @param response  the response string to parse.
+     * @param stats     the map to populate with extracted statistics.
+     * @param enumClass the enum class containing constants with `getValue()` and `getName()` methods.
+     * @param prefix    optional prefix for keys in the stats map.
+     * @param <E>       the type of the enum.
+     */
     private <E extends Enum<E>> void populateStats(String response, Map<String, String> stats, Class<E> enumClass, String prefix) {
         try {
             for (E item : enumClass.getEnumConstants()) {
@@ -281,6 +385,22 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
     }
 
     /**
+     * Control SystemReboot
+     *
+     * @param groupName the groupName is name of command
+     */
+    private void sendControlCommand(String groupName, String command) {
+        try {
+            String response = this.send(command);
+            if (StringUtils.isNullOrEmpty(response) || response.contains(DaLiteConstant.ERROR_RESPONSE) || !response.contains(DaLiteConstant.OK)) {
+                throw new IllegalArgumentException(String.format("Error when control %s, Syntax error command: %s", groupName, response));
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException(String.format("Can't control %s", groupName), e);
+        }
+    }
+
+    /**
      * Retrieve monitoring data
      *
      * @throws FailedLoginException if get the FailedLoginException
@@ -290,7 +410,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
             if (command.isMonitoring() || isConfigManagement) {
                 if (command.equals(DaLiteCommand.PRESET_NAME)) {
                     for (int i = 1; i <= numberOfPreset; i++) {
-                        sendCommandDetails(String.format(command.getCommand(), i), command.getName() + i);
+                        sendCommandDetails(String.format(command.getCommand(), i), "Preset" + i);
                     }
                 } else {
                     sendCommandDetails(command.getCommand(), command.getName());

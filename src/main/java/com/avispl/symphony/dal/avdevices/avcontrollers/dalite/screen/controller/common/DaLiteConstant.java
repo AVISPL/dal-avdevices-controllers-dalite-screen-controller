@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2023 AVI-SPL, Inc. All Rights Reserved.
+ * Copyright (c) 2025 AVI-SPL, Inc. All Rights Reserved.
  */
+
 package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.common;
 
 /**
@@ -34,5 +35,7 @@ public class DaLiteConstant {
     public static final String RECALLING = "Recalling";
     public static final String TRUE = "True";
     public static final String SCREEN_INFO = "ScreenInfo";
+    public static final String SCREEN_CONTROL = "ScreenControl";
     public static final String SYSTEM = "System";
+    public static final String ERROR_RESPONSE = "Syntax error";
 }
