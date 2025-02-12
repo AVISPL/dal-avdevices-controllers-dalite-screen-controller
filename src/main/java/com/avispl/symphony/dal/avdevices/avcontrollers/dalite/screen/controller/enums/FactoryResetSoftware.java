@@ -8,13 +8,13 @@ package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller
  * Enum representing factory reset related information with display names and corresponding response patterns.
  *
  * @author Kevin / Symphony Dev Team<br>
- * Created on 11/6/2023
+ * Created on 04/02/2025
  * @since 1.0.0
  */
 public enum FactoryResetSoftware {
 
-    SOFTWARE("FactoryResetSoftware", "factory-reset \\(software\\):(.*?)\r\n"),
-    HARDWARE("FactoryResetHardware", "factory-reset \\(hardware\\):(.*?)\r\n"),
+    SOFTWARE("FactoryResetSoftwareStatus", "factory-reset \\(software\\):(.*?)\r\n"),
+    HARDWARE("FactoryResetHardwareStatus", "factory-reset \\(hardware\\):(.*?)\r\n"),
     ;
 
     /**

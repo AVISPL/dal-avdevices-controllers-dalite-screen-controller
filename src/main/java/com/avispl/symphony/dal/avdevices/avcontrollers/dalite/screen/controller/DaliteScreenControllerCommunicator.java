@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
  * DaliteScreenControllerCommunicator
  *
  * @author Kevin / Symphony Dev Team<br>
- * Created on 8/14/2023
+ * Created on 04/02/2025
  * @since 1.0.0
  */
 public class DaliteScreenControllerCommunicator extends SshCommunicator implements Monitorable, Controller {
@@ -247,7 +247,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
             presetNames.clear();
             switch (command) {
                 case NETWORK_INFO:
-                    populateStats(data, stats, NetworkInformation.class, DaLiteConstant.NETWORK_SETTINGS);
+                    populateStats(data, stats, NetworkInformation.class, DaLiteConstant.NETWORK);
                     break;
                 case VERSION:
                     populateStats(data, stats, VersionInformation.class, DaLiteConstant.EMPTY);
@@ -465,7 +465,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
             if (StringUtils.isNotNullOrEmpty(value)) {
                 stats.put(property.getName(), value);
             } else {
-                stats.put(property.getName(), "");
+                stats.put(property.getName(), DaLiteConstant.NA);
             }
             advancedControllableProperties.add(property);
         }

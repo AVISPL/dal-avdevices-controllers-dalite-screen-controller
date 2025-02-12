@@ -5,15 +5,15 @@
 package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.common;
 
 /**
- * DaLiteCommand class defined the enum contains all overall command of the device
+ * DaLiteCommand class provides all regex and name of DaLite Command
  *
  * @author Kevin / Symphony Dev Team<br>
- * Created on 10/30/2023
+ * Created on 02/04/2025
  * @since 1.0.0
  */
 public enum DaLiteCommand {
 
-	NETWORK_INFO("NetworkSettings", "network settings get", true),
+	NETWORK_INFO("Network", "network settings get", true),
 	VERSION("SystemVersion", "version", true),
 	FACTORY_RESET("FactoryReset", "system factory-reset get", true),
 	SCREEN_INFO("ScreenInfo", "screen get-info", true),

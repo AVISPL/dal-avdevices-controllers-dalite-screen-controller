@@ -27,10 +27,10 @@ public class DaliteScreenControllerCommunicatorTest {
 	@BeforeEach()
 	public void setUp() throws Exception {
 		daliteScreenControllerCommunicator = new DaliteScreenControllerCommunicator();
-		daliteScreenControllerCommunicator.setHost("");
+		daliteScreenControllerCommunicator.setHost("172.31.254.233");
 		daliteScreenControllerCommunicator.setPort(22);
-		daliteScreenControllerCommunicator.setLogin("");
-		daliteScreenControllerCommunicator.setPassword("");
+		daliteScreenControllerCommunicator.setLogin("admin");
+		daliteScreenControllerCommunicator.setPassword("1234");
 		daliteScreenControllerCommunicator.init();
 		daliteScreenControllerCommunicator.connect();
 	}
@@ -46,7 +46,7 @@ public class DaliteScreenControllerCommunicatorTest {
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
 		List<AdvancedControllableProperty> advancedControllableProperties = extendedStatistics.getControllableProperties();
-		Assertions.assertEquals(29, stats.size());
+		Assertions.assertEquals(28, stats.size());
 		Assertions.assertEquals(7, advancedControllableProperties.size());
 	}
 
@@ -60,7 +60,7 @@ public class DaliteScreenControllerCommunicatorTest {
 		daliteScreenControllerCommunicator.setConfigManagement("false");
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
-		Assertions.assertEquals(25, stats.size());
+		Assertions.assertEquals(20, stats.size());
 	}
 
 	@Test

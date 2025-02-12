@@ -8,7 +8,7 @@ package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller
  * Enum representing different types of screen information with their corresponding display names and response patterns.
  *
  * @author Kevin / Symphony Dev Team<br>
- * Created on 11/6/2023
+ * Created on 04/02/2025
  * @since 1.0.0
  */
 public enum ScreenInformation {
