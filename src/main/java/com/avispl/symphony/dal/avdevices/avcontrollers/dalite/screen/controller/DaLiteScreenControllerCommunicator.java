@@ -78,11 +78,6 @@ public class DaLiteScreenControllerCommunicator extends SshCommunicator implemen
 	private String configManagement;
 
 	/**
-	 * isNextPollingInterval to check next PollingInterval to retrieve crosspoint gain of the device
-	 */
-	private boolean isNextPollingInterval;
-
-	/**
 	 * Store previous/current ExtendedStatistics
 	 */
 	private ExtendedStatistics localExtendedStatistics;
@@ -275,7 +270,6 @@ public class DaLiteScreenControllerCommunicator extends SshCommunicator implemen
 			List<AdvancedControllableProperty> advancedControllableProperty) {
 		populateButtonControl(controlStats, advancedControllableProperty);
 		for (DaLiteCommand command : DaLiteCommand.values()) {
-			String key = command.getName();
 			String data = StringUtils.isNullOrEmpty(cacheKeyAndValue.get(command.getName())) ? DaLiteConstant.NONE : cacheKeyAndValue.get(command.getName());
 			switch (command) {
 				case VERSION:
