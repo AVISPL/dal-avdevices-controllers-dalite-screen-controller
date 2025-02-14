@@ -27,10 +27,10 @@ public class DaliteScreenControllerCommunicatorTest {
 	@BeforeEach()
 	public void setUp() throws Exception {
 		daliteScreenControllerCommunicator = new DaliteScreenControllerCommunicator();
-		daliteScreenControllerCommunicator.setHost("");
+		daliteScreenControllerCommunicator.setHost("172.31.254.233");
 		daliteScreenControllerCommunicator.setPort(22);
-		daliteScreenControllerCommunicator.setLogin("");
-		daliteScreenControllerCommunicator.setPassword("");
+		daliteScreenControllerCommunicator.setLogin("admin");
+		daliteScreenControllerCommunicator.setPassword("1234");
 		daliteScreenControllerCommunicator.init();
 		daliteScreenControllerCommunicator.connect();
 	}
