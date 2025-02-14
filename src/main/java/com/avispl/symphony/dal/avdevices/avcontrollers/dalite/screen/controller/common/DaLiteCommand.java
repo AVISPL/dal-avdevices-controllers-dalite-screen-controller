@@ -55,8 +55,8 @@ public enum DaLiteCommand {
 	/**
 	 * Constructs a DaLiteCommand with the specified name, command, and monitoring status.
 	 *
-	 * @param name         the name of the command
-	 * @param command      the command string to be executed
+	 * @param name the name of the command
+	 * @param command the command string to be executed
 	 * @param isMonitoring whether the command is used for monitoring purposes
 	 */
 	DaLiteCommand(String name, String command, boolean isMonitoring) {

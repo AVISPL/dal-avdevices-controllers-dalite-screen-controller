@@ -13,42 +13,42 @@ package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller
  */
 public enum VersionInformation {
 
-    COMMIT("SoftwareCommitId", "Commit(.*?)\r\n"),
-    SCREEN_VERSION("ScreenVersion", "Screen Version(.*?)\r\n"),
-    SWITCH_1_VERSION("Switch1Version", "Switch 1 Version(.*?)\r\n"),
-    SWITCH_2_VERSION("Switch2Version", "Switch 2 Version(.*?)\r\n"),
-    SYSTEM_VERSION("SystemVersion", "System Version(.*?)\r\n"),
-    ;
+	COMMIT("SoftwareCommitId", "Commit(.*?)\r\n"),
+	SCREEN_VERSION("ScreenVersion", "Screen Version(.*?)\r\n"),
+	SWITCH_1_VERSION("Switch1Version", "Switch 1 Version(.*?)\r\n"),
+	SWITCH_2_VERSION("Switch2Version", "Switch 2 Version(.*?)\r\n"),
+	SYSTEM_VERSION("SystemVersion", "System Version(.*?)\r\n"),
+	;
 
-    /**
-     * Constructor Instance
-     *
-     * @param name  of {@link #name}
-     * @param value of {@link #value}
-     */
-    VersionInformation(String name, String value) {
-        this.name = name;
-        this.value = value;
-    }
+	/**
+	 * Constructor Instance
+	 *
+	 * @param name of {@link #name}
+	 * @param value of {@link #value}
+	 */
+	VersionInformation(String name, String value) {
+		this.name = name;
+		this.value = value;
+	}
 
-    final private String name;
-    final private String value;
+	final private String name;
+	final private String value;
 
-    /**
-     * Retrieves {@link #name}
-     *
-     * @return value of {@link #name}
-     */
-    public String getName() {
-        return name;
-    }
+	/**
+	 * Retrieves {@link #name}
+	 *
+	 * @return value of {@link #name}
+	 */
+	public String getName() {
+		return name;
+	}
 
-    /**
-     * Retrieves {@link #value}
-     *
-     * @return value of {@link #value}
-     */
-    public String getValue() {
-        return value;
-    }
+	/**
+	 * Retrieves {@link #value}
+	 *
+	 * @return value of {@link #value}
+	 */
+	public String getValue() {
+		return value;
+	}
 }
