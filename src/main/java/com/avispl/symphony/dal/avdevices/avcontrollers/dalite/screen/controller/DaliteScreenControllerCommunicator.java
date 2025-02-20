@@ -403,13 +403,13 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 		try {
 			String response = this.send(command);
 			if (response.contains(DaLiteConstant.PRESET_NOT_DEFINED)) {
-				throw new IllegalArgumentException(String.format("the preset button is undefined."));
+				throw new IllegalArgumentException("The preset button is undefined.");
 			}
 			if (StringUtils.isNullOrEmpty(response) || response.contains(DaLiteConstant.ERROR_RESPONSE) || !response.contains(DaLiteConstant.OK)) {
 				throw new IllegalArgumentException(String.format("Error when control %s, Syntax error command: %s", groupName, response));
 			}
 		} catch (Exception e) {
-			throw new IllegalArgumentException(String.format("Can't control %s, %s", groupName, e.getMessage()));
+			throw new IllegalArgumentException(String.format("Can't control %s. %s", groupName, e.getMessage()));
 		}
 	}
 
