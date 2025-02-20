@@ -35,4 +35,5 @@ public class DaLiteConstant {
 	public static final String ERROR_RESPONSE = "Syntax error";
 	public static final String OK = "OK";
 	public static final String NA = "N/A";
+	public static final String PRESET_NOT_DEFINED = "Preset not defined";
 }
