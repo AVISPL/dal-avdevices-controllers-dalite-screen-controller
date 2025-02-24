@@ -343,7 +343,9 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 				String name = methodName.invoke(item).toString();
 				String key = (StringUtils.isNotNullOrEmpty(prefix) ? prefix + DaLiteConstant.HASH : DaLiteConstant.EMPTY) + name;
 				try {
-					stats.put(key, uppercaseFirstCharacter(extractResponseValue(response, value)));
+					String extractedValue = extractResponseValue(response, value);
+					String processedValue = extractedValue.equalsIgnoreCase("null") ? DaLiteConstant.NONE : extractedValue;
+					stats.put(key, uppercaseFirstCharacter(processedValue));
 				} catch (Exception e) {
 					stats.put(key, DaLiteConstant.NONE);
 				}
