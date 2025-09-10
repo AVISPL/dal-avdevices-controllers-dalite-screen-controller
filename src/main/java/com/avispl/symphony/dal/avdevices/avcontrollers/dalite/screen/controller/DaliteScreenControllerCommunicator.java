@@ -496,7 +496,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 			String response = send(command.contains("\r") ? command : command.concat("\r"));
 			cacheKeyAndValue.put(name, response.replaceAll(DaLiteConstant.REGEX_RESPONSE, DaLiteConstant.EMPTY));
 		} catch (FailedLoginException e) {
-			throw new FailedLoginException("Login failed: " + e);
+			throw e;
 		} catch (Exception ex) {
 			logger.error(String.format("Error when get command: %s", command), ex);
 			failedMonitor.put(command, ex.getMessage());
