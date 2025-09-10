@@ -12,6 +12,10 @@ package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller
  * @since 1.0.0
  */
 public class DaLiteConstant {
+	private DaLiteConstant() {
+		// Prevent instantiation
+	}
+
 	public static final String TRUE = "True";
 	public static final String REGEX_RESPONSE = "\u001B|\\[|0;37m|0m";
 	public static final String EMPTY = "";
@@ -36,4 +40,5 @@ public class DaLiteConstant {
 	public static final String OK = "OK";
 	public static final String NA = "N/A";
 	public static final String PRESET_NOT_DEFINED = "Preset not defined";
+	public static final String ADAPTER_METADATA = "AdapterMetadata";
 }
