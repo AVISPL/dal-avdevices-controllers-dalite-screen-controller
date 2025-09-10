@@ -12,8 +12,7 @@ package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller
  * @since 1.0.0
  */
 public enum VersionInformation {
-
-	COMMIT("SoftwareCommitId", "Commit(.*?)\r\n"),
+	COMMIT("SoftwareCommitID", "Commit(.*?)\r\n"),
 	SCREEN_VERSION("ScreenVersion", "Screen Version(.*?)\r\n"),
 	SWITCH_1_VERSION("Switch1Version", "Switch 1 Version(.*?)\r\n"),
 	SWITCH_2_VERSION("Switch2Version", "Switch 2 Version(.*?)\r\n"),

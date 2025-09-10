@@ -19,7 +19,6 @@ public class DaLiteConstant {
 	public static final String TRUE = "True";
 	public static final String REGEX_RESPONSE = "\u001B|\\[|0;37m|0m";
 	public static final String EMPTY = "";
-	public static final String NONE = "None";
 	public static final String HASH = "#";
 	public static final String MAC_ADDRESS = "MACAddress";
 	public static final String IP_ADDRESS = "IPAddress";

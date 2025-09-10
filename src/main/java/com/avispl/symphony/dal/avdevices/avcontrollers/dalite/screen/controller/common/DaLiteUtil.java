@@ -30,7 +30,7 @@ public class DaLiteUtil {
 	 * @return formatted String or {@link DaLiteConstant#NA} if not applicable
 	 */
 	public static String mapToValue(Object value) {
-		if (value == null) {
+		if (value == null || value.equals("null")) {
 			return DaLiteConstant.NA;
 		}
 		if (value instanceof String) {

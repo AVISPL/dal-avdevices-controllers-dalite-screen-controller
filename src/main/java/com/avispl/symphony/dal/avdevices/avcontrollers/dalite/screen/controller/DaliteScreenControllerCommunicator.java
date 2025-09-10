@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
@@ -281,7 +282,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 		populateAdapterMetadata(stats);
 		populateButtonControl(controlStats, advancedControllableProperty);
 		for (DaLiteCommand command : DaLiteCommand.values()) {
-			String data = StringUtils.isNullOrEmpty(cacheKeyAndValue.get(command.getName())) ? DaLiteConstant.NONE : cacheKeyAndValue.get(command.getName());
+			String data = Optional.ofNullable(cacheKeyAndValue.get(command.getName())).orElse(DaLiteConstant.NA);
 			presetNames.clear();
 			switch (command) {
 				case NETWORK_INFO:
@@ -298,14 +299,11 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 					break;
 				case SERIAL_NUMBER:
 					data = handleResponse(command.getCommand(), data);
-					if (DaLiteConstant.NONE.equals(data) || data.contains("not set")) {
-						stats.put(command.getName(), DaLiteConstant.NONE);
-					} else {
-						stats.put(command.getName(), data);
-					}
+					String value = (DaLiteConstant.NA.equals(data) || data.contains("not set")) ? DaLiteConstant.NA : data;
+					stats.put(command.getName(), value);
 					break;
 				case SCREEN_POSITION:
-					if (DaLiteConstant.NONE.equals(data)) {
+					if (DaLiteConstant.NA.equals(data)) {
 						continue;
 					}
 					data = handleResponse(command.getCommand(), data);
@@ -408,13 +406,10 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 				String value = methodValue.invoke(item).toString();
 				String name = methodName.invoke(item).toString();
 				String key = (StringUtils.isNotNullOrEmpty(prefix) ? prefix + DaLiteConstant.HASH : DaLiteConstant.EMPTY) + name;
-				try {
-					String extractedValue = extractResponseValue(response, value);
-					String processedValue = extractedValue.equalsIgnoreCase("null") ? DaLiteConstant.NA : extractedValue;
-					stats.put(key, uppercaseFirstCharacter(processedValue));
-				} catch (Exception e) {
-					stats.put(key, DaLiteConstant.NA);
-				}
+				String extractedValue = extractResponseValue(response, value);
+				String processedValue = DaLiteUtil.mapToValue(extractedValue);
+
+				stats.put(key, processedValue);
 			}
 		} catch (Exception e) {
 			logger.error("Error when populate " + enumClass.toString(), e);
@@ -438,17 +433,6 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 
 		return DaLiteConstant.NA;
 	}
-
-	/**
-	 * capitalize the first character of the string
-	 *
-	 * @param input input string
-	 * @return string after fix
-	 */
-	private String uppercaseFirstCharacter(String input) {
-		return Character.toUpperCase(input.charAt(0)) + input.substring(1);
-	}
-
 
 	/**
 	 * This method is used to handle the response received from the device

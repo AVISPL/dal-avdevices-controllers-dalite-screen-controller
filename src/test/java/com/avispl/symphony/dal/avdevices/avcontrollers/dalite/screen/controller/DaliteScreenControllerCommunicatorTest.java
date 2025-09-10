@@ -47,7 +47,7 @@ class DaliteScreenControllerCommunicatorTest {
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
 		List<AdvancedControllableProperty> advancedControllableProperties = extendedStatistics.getControllableProperties();
-		Assertions.assertEquals(28, stats.size());
+		Assertions.assertEquals(32, stats.size());
 		Assertions.assertEquals(7, advancedControllableProperties.size());
 	}
 
