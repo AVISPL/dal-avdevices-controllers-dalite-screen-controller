@@ -5,6 +5,8 @@ package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -141,6 +143,17 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 		this.setLoginSuccessList(Collections.singletonList("> "));
 		this.setLoginErrorList(Collections.singletonList("Permission denied, please try again."));
 		this.loadProperties(this.versionProperties);
+	}
+
+	@Override
+	public int ping() throws Exception {
+		try (Socket socket = new Socket()) {
+			socket.connect(new InetSocketAddress(this.host, this.getPort()), this.getPingTimeout());
+			return super.ping();
+		} catch (Exception e) {
+			this.disconnect();
+			throw e;
+		}
 	}
 
 	/**
@@ -442,8 +455,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 * @return string after fix
 	 */
 	private String handleResponse(String command, String response) {
-		return response.replaceAll(command, DaLiteConstant.EMPTY)
-				.replaceAll("OK", DaLiteConstant.EMPTY).replaceAll(">", DaLiteConstant.EMPTY).trim();
+		return response.replaceAll(command + "|OK|>", DaLiteConstant.EMPTY).trim();
 	}
 
 	/**
