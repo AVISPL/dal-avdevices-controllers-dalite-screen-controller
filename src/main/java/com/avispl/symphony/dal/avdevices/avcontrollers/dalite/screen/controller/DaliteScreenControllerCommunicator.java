@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import org.springframework.util.CollectionUtils;
 
+import com.jcraft.jsch.JSchException;
 import javax.security.auth.login.FailedLoginException;
 
 import com.avispl.symphony.api.dal.control.Controller;
@@ -147,13 +148,15 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 
 	@Override
 	public int ping() throws Exception {
-		try (Socket socket = new Socket()) {
-			socket.connect(new InetSocketAddress(this.host, this.getPort()), this.getPingTimeout());
-			return super.ping();
-		} catch (Exception e) {
-			this.disconnect();
-			throw e;
+		if ("TCP".equalsIgnoreCase(this.getPingProtocol())) {
+			try (Socket socket = new Socket()) {
+				socket.connect(new InetSocketAddress(this.host, this.getPort()), this.getPingTimeout());
+			} catch (Exception e) {
+				this.disconnect();
+				throw e;
+			}
 		}
+		return super.ping();
 	}
 
 	/**
@@ -223,8 +226,9 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 			}
 
 			switch (keyName) {
-				case DaLiteConstant.REBOOT:
+				case DaLiteConstant.SYSTEM_REBOOT:
 					sendControlCommand(keyName, DaLiteCommand.SYSTEM_REBOOT);
+					this.disconnect();
 					break;
 				case "MoveUp":
 					sendControlCommand(keyName, DaLiteCommand.MOVE_UP);
@@ -455,7 +459,9 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 * @return string after fix
 	 */
 	private String handleResponse(String command, String response) {
-		return response.replaceAll(command + "|OK|>", DaLiteConstant.EMPTY).trim();
+		return StringUtils.isNullOrEmpty(response)
+				? DaLiteConstant.EMPTY
+				: response.replaceAll(command + "|OK|>", DaLiteConstant.EMPTY).trim();
 	}
 
 	/**
@@ -463,7 +469,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 *
 	 * @param groupName the groupName is name of command
 	 */
-	private void sendControlCommand(String groupName, String command) {
+	private void sendControlCommand(String groupName, String command) throws Exception {
 		try {
 			String response = this.send(command);
 			if (response.contains(DaLiteConstant.PRESET_NOT_DEFINED)) {
@@ -472,6 +478,9 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 			if (StringUtils.isNullOrEmpty(response) || response.contains(DaLiteConstant.ERROR_RESPONSE) || !response.contains(DaLiteConstant.OK)) {
 				throw new IllegalArgumentException(String.format("Error when control %s, Syntax error command: %s", groupName, response));
 			}
+		} catch (JSchException e) {
+			this.disconnect();
+			throw e;
 		} catch (Exception e) {
 			throw new IllegalArgumentException(String.format("Can't control %s. %s", groupName, e.getMessage()));
 		}
@@ -482,7 +491,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 *
 	 * @throws FailedLoginException if get the FailedLoginException
 	 */
-	private void retrieveMonitoring() throws FailedLoginException {
+	private void retrieveMonitoring() throws Exception {
 		for (DaLiteCommand command : DaLiteCommand.values()) {
 			if (command.isMonitoring() || isConfigManagement) {
 				if (command.equals(DaLiteCommand.PRESET_NAME)) {
@@ -503,10 +512,13 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 * @param name the group is name of properties
 	 * @throws FailedLoginException if authentication fails
 	 */
-	private void sendCommandDetails(String command, String name) throws FailedLoginException {
+	private void sendCommandDetails(String command, String name) throws Exception {
 		try {
 			String response = send(command.contains("\r") ? command : command.concat("\r"));
 			cacheKeyAndValue.put(name, response.replaceAll(DaLiteConstant.REGEX_RESPONSE, DaLiteConstant.EMPTY));
+		} catch (JSchException e) {
+			this.disconnect();
+			throw e;
 		} catch (FailedLoginException e) {
 			throw e;
 		} catch (Exception ex) {

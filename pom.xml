@@ -87,36 +87,73 @@
   <packaging>jar</packaging>
 
   <dependencies>
-    <!--system scope-->
+    <!--symphony libraries-->
     <dependency>
       <groupId>com.avispl.symphony.api</groupId>
       <artifactId>symphony-api-commons</artifactId>
-      <version>5.15.0</version>
+      <version>6.2.0</version>
       <scope>system</scope>
-      <systemPath>${basedir}/lib/symphony-api-commons-5.15.0.jar</systemPath>
+      <systemPath>${basedir}/lib/symphony-api-commons-6.2.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.avispl.symphony.api</groupId>
       <artifactId>symphony-api-dal</artifactId>
-      <version>5.15.0</version>
+      <version>6.3.0</version>
       <scope>system</scope>
-      <systemPath>${basedir}/lib/symphony-api-dal-5.15.0.jar</systemPath>
+      <systemPath>${basedir}/lib/symphony-api-dal-6.3.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.avispl.symphony.dal</groupId>
       <artifactId>symphony-dal-commons</artifactId>
-      <version>5.15.0</version>
+      <version>6.3.0</version>
       <scope>system</scope>
-      <systemPath>${basedir}/lib/symphony-dal-commons-5.15.0.jar</systemPath>
+      <systemPath>${basedir}/lib/symphony-dal-commons-6.3.0.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>org.icmp4j</groupId>
       <artifactId>icmp4j</artifactId>
+      <version>1018</version>
       <scope>system</scope>
       <systemPath>${basedir}/lib/icmp4j-1018.jar</systemPath>
-      <version>1018</version>
     </dependency>
-
+    <!--  spring framework libraries  -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-web</artifactId>
+      <version>6.2.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-expression</artifactId>
+      <version>6.2.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context-support</artifactId>
+      <version>6.2.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <version>6.2.0</version>
+      <scope>test</scope>
+    </dependency>
+    <!--test dependencies-->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.11.0-M1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <version>5.11.0-M1</version>
+      <scope>test</scope>
+    </dependency>
     <!--dependencies of symphony-dal-commons-->
     <dependency>
       <groupId>commons-beanutils</groupId>
@@ -130,24 +167,7 @@
       <version>3.7.7</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-web</artifactId>
-      <version>5.2.25.RELEASE</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-expression</artifactId>
-      <version>5.2.25.RELEASE</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-context-support</artifactId>
-      <version>5.2.25.RELEASE</version>
-      <scope>provided</scope>
-    </dependency>
+    <!--  others  -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
@@ -206,25 +226,6 @@
       <groupId>org.openjdk.jol</groupId>
       <artifactId>jol-core</artifactId>
       <version>0.16</version>
-    </dependency>
-    <!--test dependencies-->
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <version>5.11.0-M1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <version>5.11.0-M1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-test</artifactId>
-      <version>5.2.25.RELEASE</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
