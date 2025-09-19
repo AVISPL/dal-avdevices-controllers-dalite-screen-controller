@@ -3,17 +3,17 @@
  */
 package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller;
 
-import com.avispl.symphony.api.dal.dto.control.AdvancedControllableProperty;
-import com.avispl.symphony.api.dal.dto.control.ControllableProperty;
-import com.avispl.symphony.api.dal.dto.monitor.ExtendedStatistics;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
+import com.avispl.symphony.api.dal.dto.control.AdvancedControllableProperty;
+import com.avispl.symphony.api.dal.dto.control.ControllableProperty;
+import com.avispl.symphony.api.dal.dto.monitor.ExtendedStatistics;
 
 /**
  * DaliteScreenControllerCommunicatorTest class
@@ -22,11 +22,11 @@ import java.util.Map;
  * Created on 8/14/2023
  * @since 1.0.0
  */
-public class DaliteScreenControllerCommunicatorTest {
+class DaliteScreenControllerCommunicatorTest {
 	private DaliteScreenControllerCommunicator daliteScreenControllerCommunicator;
 
 	@BeforeEach()
-	public void setUp() throws Exception {
+	void setUp() throws Exception {
 		daliteScreenControllerCommunicator = new DaliteScreenControllerCommunicator();
 		daliteScreenControllerCommunicator.setHost("");
 		daliteScreenControllerCommunicator.setPort(22);
@@ -37,7 +37,7 @@ public class DaliteScreenControllerCommunicatorTest {
 	}
 
 	@AfterEach()
-	public void destroy() throws Exception {
+	void destroy() throws Exception {
 		daliteScreenControllerCommunicator.disconnect();
 	}
 
@@ -47,7 +47,7 @@ public class DaliteScreenControllerCommunicatorTest {
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
 		List<AdvancedControllableProperty> advancedControllableProperties = extendedStatistics.getControllableProperties();
-		Assertions.assertEquals(28, stats.size());
+		Assertions.assertEquals(32, stats.size());
 		Assertions.assertEquals(7, advancedControllableProperties.size());
 	}
 
@@ -61,7 +61,7 @@ public class DaliteScreenControllerCommunicatorTest {
 		daliteScreenControllerCommunicator.setConfigManagement("false");
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
-		Assertions.assertEquals(20, stats.size());
+		Assertions.assertEquals(24, stats.size());
 	}
 
 	@Test

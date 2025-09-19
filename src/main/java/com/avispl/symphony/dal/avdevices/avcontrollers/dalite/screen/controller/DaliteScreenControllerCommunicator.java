@@ -1,8 +1,29 @@
 /*
  * Copyright (c) 2025 AVI-SPL, Inc. All Rights Reserved.
  */
-
 package com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.springframework.util.CollectionUtils;
+
+import com.jcraft.jsch.JSchException;
+import javax.security.auth.login.FailedLoginException;
 
 import com.avispl.symphony.api.dal.control.Controller;
 import com.avispl.symphony.api.dal.dto.control.AdvancedControllableProperty;
@@ -12,22 +33,14 @@ import com.avispl.symphony.api.dal.dto.monitor.Statistics;
 import com.avispl.symphony.api.dal.monitor.Monitorable;
 import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.common.DaLiteCommand;
 import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.common.DaLiteConstant;
+import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.common.DaLiteUtil;
+import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.enums.AdapterMetadata;
 import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.enums.FactoryResetSoftware;
 import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.enums.NetworkInformation;
 import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.enums.ScreenInformation;
 import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.enums.VersionInformation;
 import com.avispl.symphony.dal.communicator.SshCommunicator;
 import com.avispl.symphony.dal.util.StringUtils;
-
-import org.springframework.util.CollectionUtils;
-
-import javax.security.auth.login.FailedLoginException;
-
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * DaliteScreenControllerCommunicator for controlling and monitoring DaLite screens over SSH.
@@ -75,6 +88,16 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	private final ReentrantLock reentrantLock = new ReentrantLock();
 
 	/**
+	 * Device adapter instantiation timestamp.
+	 */
+	private final Long adapterInitializationTimestamp = System.currentTimeMillis();
+
+	/**
+	 * Application configuration loaded from {@code version.properties}.
+	 */
+	private final Properties versionProperties = new Properties();
+
+	/**
 	 * Store previous/current ExtendedStatistics
 	 */
 	private ExtendedStatistics localExtendedStatistics;
@@ -120,6 +143,20 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 		this.setCommandSuccessList(Arrays.asList("> ", "NOW!\r\r\n"));
 		this.setLoginSuccessList(Collections.singletonList("> "));
 		this.setLoginErrorList(Collections.singletonList("Permission denied, please try again."));
+		this.loadProperties(this.versionProperties);
+	}
+
+	@Override
+	public int ping() throws Exception {
+		if ("TCP".equalsIgnoreCase(this.getPingProtocol())) {
+			try (Socket socket = new Socket()) {
+				socket.connect(new InetSocketAddress(this.host, this.getPort()), this.getPingTimeout());
+			} catch (Exception e) {
+				this.disconnect();
+				throw e;
+			}
+		}
+		return super.ping();
 	}
 
 	/**
@@ -189,8 +226,9 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 			}
 
 			switch (keyName) {
-				case DaLiteConstant.REBOOT:
+				case DaLiteConstant.SYSTEM_REBOOT:
 					sendControlCommand(keyName, DaLiteCommand.SYSTEM_REBOOT);
+					this.disconnect();
 					break;
 				case "MoveUp":
 					sendControlCommand(keyName, DaLiteCommand.MOVE_UP);
@@ -236,6 +274,21 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	}
 
 	/**
+	 * Loads version properties and sets initial values used to create general properties
+	 * for the aggregator device.
+	 *
+	 * @param properties the properties to load and update
+	 */
+	private void loadProperties(Properties properties) {
+		try {
+			properties.load(this.getClass().getResourceAsStream("/version.properties"));
+			properties.setProperty(AdapterMetadata.ADAPTER_UPTIME.getProperty(), String.valueOf(this.adapterInitializationTimestamp));
+		} catch (IOException e) {
+			this.logger.error("Failed to load version properties file", e);
+		}
+	}
+
+	/**
 	 * Populate monitoring and controlling data
 	 *
 	 * @param stats the stats are list of statistics
@@ -243,9 +296,10 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 * @param advancedControllableProperty the advancedControllableProperty are AdvancedControllableProperty instance
 	 */
 	private void populateMonitoringAndControlling(Map<String, String> stats, Map<String, String> controlStats, List<AdvancedControllableProperty> advancedControllableProperty) {
+		populateAdapterMetadata(stats);
 		populateButtonControl(controlStats, advancedControllableProperty);
 		for (DaLiteCommand command : DaLiteCommand.values()) {
-			String data = StringUtils.isNullOrEmpty(cacheKeyAndValue.get(command.getName())) ? DaLiteConstant.NONE : cacheKeyAndValue.get(command.getName());
+			String data = Optional.ofNullable(cacheKeyAndValue.get(command.getName())).orElse(DaLiteConstant.NA);
 			presetNames.clear();
 			switch (command) {
 				case NETWORK_INFO:
@@ -262,14 +316,11 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 					break;
 				case SERIAL_NUMBER:
 					data = handleResponse(command.getCommand(), data);
-					if (DaLiteConstant.NONE.equals(data) || data.contains("not set")) {
-						stats.put(command.getName(), DaLiteConstant.NONE);
-					} else {
-						stats.put(command.getName(), data);
-					}
+					String value = (DaLiteConstant.NA.equals(data) || data.contains("not set")) ? DaLiteConstant.NA : data;
+					stats.put(command.getName(), value);
 					break;
 				case SCREEN_POSITION:
-					if (DaLiteConstant.NONE.equals(data)) {
+					if (DaLiteConstant.NA.equals(data)) {
 						continue;
 					}
 					data = handleResponse(command.getCommand(), data);
@@ -292,6 +343,36 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 					break;
 			}
 		}
+	}
+
+	/**
+	 * Populates adapter metadata statistics into the provided map.
+	 *
+	 * @param stats the stats are list of statistics
+	 */
+	private void populateAdapterMetadata(Map<String, String> stats) {
+		if (versionProperties == null) {
+			logger.error("Version properties are null, adapter metadata statistic skipped");
+			return;
+		}
+		Arrays.stream(AdapterMetadata.values()).forEach(adapterMetadata -> {
+			String propertyName = DaLiteConstant.ADAPTER_METADATA + DaLiteConstant.HASH + adapterMetadata.getName();
+			String propertyValue = versionProperties.getProperty(adapterMetadata.getProperty());
+			switch (adapterMetadata) {
+				case ADAPTER_BUILD_DATE:
+				case ADAPTER_VERSION:
+					stats.put(propertyName, DaLiteUtil.mapToValue(propertyValue));
+					break;
+				case ADAPTER_UPTIME:
+					stats.put(propertyName, DaLiteUtil.mapToUptime(propertyValue));
+					break;
+				case ADAPTER_UPTIME_MIN:
+					stats.put(propertyName, DaLiteUtil.mapToUptimeMin(propertyValue));
+					break;
+				default:
+					break;
+			}
+		});
 	}
 
 	/**
@@ -342,16 +423,13 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 				String value = methodValue.invoke(item).toString();
 				String name = methodName.invoke(item).toString();
 				String key = (StringUtils.isNotNullOrEmpty(prefix) ? prefix + DaLiteConstant.HASH : DaLiteConstant.EMPTY) + name;
-				try {
-					String extractedValue = extractResponseValue(response, value);
-					String processedValue = extractedValue.equalsIgnoreCase("null") ? DaLiteConstant.NONE : extractedValue;
-					stats.put(key, uppercaseFirstCharacter(processedValue));
-				} catch (Exception e) {
-					stats.put(key, DaLiteConstant.NONE);
-				}
+				String extractedValue = extractResponseValue(response, value);
+				String processedValue = DaLiteUtil.mapToValue(extractedValue);
+
+				stats.put(key, processedValue);
 			}
 		} catch (Exception e) {
-			logger.error("Error when populate " + enumClass.toString());
+			logger.error("Error when populate " + enumClass.toString(), e);
 		}
 	}
 
@@ -370,19 +448,8 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 			return matcher.group(1).trim();
 		}
 
-		return DaLiteConstant.NONE;
+		return DaLiteConstant.NA;
 	}
-
-	/**
-	 * capitalize the first character of the string
-	 *
-	 * @param input input string
-	 * @return string after fix
-	 */
-	private String uppercaseFirstCharacter(String input) {
-		return Character.toUpperCase(input.charAt(0)) + input.substring(1);
-	}
-
 
 	/**
 	 * This method is used to handle the response received from the device
@@ -392,8 +459,9 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 * @return string after fix
 	 */
 	private String handleResponse(String command, String response) {
-		return response.replaceAll(command, DaLiteConstant.EMPTY)
-				.replaceAll("OK", DaLiteConstant.EMPTY).replaceAll(">", DaLiteConstant.EMPTY).trim();
+		return StringUtils.isNullOrEmpty(response)
+				? DaLiteConstant.EMPTY
+				: response.replaceAll(command + "|OK|>", DaLiteConstant.EMPTY).trim();
 	}
 
 	/**
@@ -401,7 +469,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 *
 	 * @param groupName the groupName is name of command
 	 */
-	private void sendControlCommand(String groupName, String command) {
+	private void sendControlCommand(String groupName, String command) throws Exception {
 		try {
 			String response = this.send(command);
 			if (response.contains(DaLiteConstant.PRESET_NOT_DEFINED)) {
@@ -410,6 +478,9 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 			if (StringUtils.isNullOrEmpty(response) || response.contains(DaLiteConstant.ERROR_RESPONSE) || !response.contains(DaLiteConstant.OK)) {
 				throw new IllegalArgumentException(String.format("Error when control %s, Syntax error command: %s", groupName, response));
 			}
+		} catch (JSchException e) {
+			this.disconnect();
+			throw e;
 		} catch (Exception e) {
 			throw new IllegalArgumentException(String.format("Can't control %s. %s", groupName, e.getMessage()));
 		}
@@ -420,7 +491,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 *
 	 * @throws FailedLoginException if get the FailedLoginException
 	 */
-	private void retrieveMonitoring() throws FailedLoginException {
+	private void retrieveMonitoring() throws Exception {
 		for (DaLiteCommand command : DaLiteCommand.values()) {
 			if (command.isMonitoring() || isConfigManagement) {
 				if (command.equals(DaLiteCommand.PRESET_NAME)) {
@@ -441,12 +512,15 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 * @param name the group is name of properties
 	 * @throws FailedLoginException if authentication fails
 	 */
-	private void sendCommandDetails(String command, String name) throws FailedLoginException {
+	private void sendCommandDetails(String command, String name) throws Exception {
 		try {
 			String response = send(command.contains("\r") ? command : command.concat("\r"));
 			cacheKeyAndValue.put(name, response.replaceAll(DaLiteConstant.REGEX_RESPONSE, DaLiteConstant.EMPTY));
+		} catch (JSchException e) {
+			this.disconnect();
+			throw e;
 		} catch (FailedLoginException e) {
-			throw new FailedLoginException("Login failed: " + e);
+			throw e;
 		} catch (Exception ex) {
 			logger.error(String.format("Error when get command: %s", command), ex);
 			failedMonitor.put(command, ex.getMessage());
