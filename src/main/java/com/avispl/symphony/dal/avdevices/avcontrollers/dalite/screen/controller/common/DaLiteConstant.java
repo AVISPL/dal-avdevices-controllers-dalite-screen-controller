@@ -25,7 +25,7 @@ public class DaLiteConstant {
 	public static final String SUBNET_MASK = "SubnetMask";
 	public static final String VLAN = "VLAN";
 	public static final String GATEWAY = "Gateway";
-	public static final String HOSTNAME = "HostName";
+	public static final String HOSTNAME = "Hostname";
 	public static final String NETWORK = "Network";
 	public static final String SCREEN_INFO = "ScreenInfo";
 	public static final String SYSTEM = "System";
