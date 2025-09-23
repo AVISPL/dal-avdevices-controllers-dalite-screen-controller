@@ -15,6 +15,8 @@ import com.avispl.symphony.api.dal.dto.control.AdvancedControllableProperty;
 import com.avispl.symphony.api.dal.dto.control.ControllableProperty;
 import com.avispl.symphony.api.dal.dto.monitor.ExtendedStatistics;
 
+import static org.junit.Assert.fail;
+
 /**
  * DaliteScreenControllerCommunicatorTest class
  *
@@ -33,7 +35,6 @@ class DaliteScreenControllerCommunicatorTest {
 		daliteScreenControllerCommunicator.setLogin("");
 		daliteScreenControllerCommunicator.setPassword("");
 		daliteScreenControllerCommunicator.init();
-		daliteScreenControllerCommunicator.connect();
 	}
 
 	@AfterEach()
@@ -42,8 +43,44 @@ class DaliteScreenControllerCommunicatorTest {
 	}
 
 	@Test
+	void testPingLatency() throws Exception {
+		long startTime = System.currentTimeMillis();
+		int pingLatency = 1000;
+		try {
+			pingLatency = daliteScreenControllerCommunicator.ping();
+		} finally {
+			long endTime = System.currentTimeMillis();
+			System.out.printf("Total time: %d%n", endTime - startTime);
+			Assertions.assertTrue(pingLatency < 1000);
+		}
+	}
+
+	@Test
+	void testGetMultipleStatisticsLatency() throws Exception {
+		daliteScreenControllerCommunicator.setConfigManagement(false);
+		long startTime = System.currentTimeMillis();
+		ExtendedStatistics extendedStatistics = null;
+		try {
+			extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
+		} finally {
+			long endTime = System.currentTimeMillis();
+			long totalTime = endTime - startTime;
+			System.out.printf("Total time: %d%n", totalTime);
+			Assertions.assertTrue(totalTime <= 30000);
+			if (extendedStatistics == null) {
+				fail("ExtendedStatistics cannot be null");
+			}
+
+			Map<String, String> stats = extendedStatistics.getStatistics();
+			List<AdvancedControllableProperty> advancedControllableProperties = extendedStatistics.getControllableProperties();
+			Assertions.assertEquals(28, stats.size());
+			Assertions.assertEquals(7, advancedControllableProperties.size());
+		}
+	}
+
+	@Test
 	void testManagementValueIsTrue() throws Exception {
-		daliteScreenControllerCommunicator.setConfigManagement("true");
+		daliteScreenControllerCommunicator.setConfigManagement(true);
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
 		List<AdvancedControllableProperty> advancedControllableProperties = extendedStatistics.getControllableProperties();
@@ -58,7 +95,7 @@ class DaliteScreenControllerCommunicatorTest {
 	 */
 	@Test
 	void testDefaultManagement() throws Exception {
-		daliteScreenControllerCommunicator.setConfigManagement("false");
+		daliteScreenControllerCommunicator.setConfigManagement(false);
 		ExtendedStatistics extendedStatistics = (ExtendedStatistics) daliteScreenControllerCommunicator.getMultipleStatistics().get(0);
 		Map<String, String> stats = extendedStatistics.getStatistics();
 		Assertions.assertEquals(24, stats.size());
@@ -66,7 +103,7 @@ class DaliteScreenControllerCommunicatorTest {
 
 	@Test
 	void testPosition() throws Exception {
-		daliteScreenControllerCommunicator.setConfigManagement("true");
+		daliteScreenControllerCommunicator.setConfigManagement(true);
 		daliteScreenControllerCommunicator.getMultipleStatistics();
 		ControllableProperty controllableProperty = new ControllableProperty();
 		String key = "ScreenControl#Position(%)";
@@ -80,7 +117,7 @@ class DaliteScreenControllerCommunicatorTest {
 
 	@Test
 	void testPreset() throws Exception {
-		daliteScreenControllerCommunicator.setConfigManagement("true");
+		daliteScreenControllerCommunicator.setConfigManagement(true);
 		daliteScreenControllerCommunicator.getMultipleStatistics();
 		ControllableProperty controllableProperty = new ControllableProperty();
 		String key = "Preset#AVI Preset";
