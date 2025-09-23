@@ -41,13 +41,6 @@ import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.
 import com.avispl.symphony.dal.avdevices.avcontrollers.dalite.screen.controller.enums.VersionInformation;
 import com.avispl.symphony.dal.communicator.SshCommunicator;
 import com.avispl.symphony.dal.util.StringUtils;
-import org.springframework.util.CollectionUtils;
-import javax.security.auth.login.FailedLoginException;
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.avispl.symphony.dal.util.ControllablePropertyFactory.createText;
 
