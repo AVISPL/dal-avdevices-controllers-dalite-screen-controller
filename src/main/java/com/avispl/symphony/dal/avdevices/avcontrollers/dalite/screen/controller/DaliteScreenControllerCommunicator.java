@@ -331,7 +331,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 					data = handleResponse(command.getCommand(), data);
 					addAdvancedControlProperties(advancedControllableProperty, controlStats,
 							createSlider(DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "Position(%)", "0", "100", 0f, 100f, Float.valueOf(data)), data);
-					controlStats.put(DaLiteConstant.SYSTEM + DaLiteConstant.HASH + "PositionCurrentValue(%)", data);
+					controlStats.put(DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "PositionCurrentValue(%)", data);
 					break;
 				case PRESET_NAME:
 					for (int i = 1; i <= numberOfPreset; i++) {
