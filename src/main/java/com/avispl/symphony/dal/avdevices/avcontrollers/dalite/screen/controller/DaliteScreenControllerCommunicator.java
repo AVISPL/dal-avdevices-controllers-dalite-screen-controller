@@ -29,6 +29,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.avispl.symphony.dal.util.ControllablePropertyFactory.createText;
+
 /**
  * DaliteScreenControllerCommunicator for controlling and monitoring DaLite screens over SSH.
  * Implements {@link Monitorable} and {@link Controller} interfaces.
@@ -82,12 +84,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	/**
 	 * configManagement imported from the user interface
 	 */
-	private String configManagement;
-
-	/**
-	 * isConfigManagement to check if true accept all controllable properties, of false accept monitoring only
-	 */
-	private boolean isConfigManagement;
+	private boolean configManagement = false;
 
 	/**
 	 * isEmergencyDelivery to check if control flow is trigger
@@ -99,7 +96,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 *
 	 * @return value of {@link #configManagement}
 	 */
-	public String getConfigManagement() {
+	public boolean isConfigManagement() {
 		return configManagement;
 	}
 
@@ -108,7 +105,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 *
 	 * @param configManagement new value of {@link #configManagement}
 	 */
-	public void setConfigManagement(String configManagement) {
+	public void setConfigManagement(boolean configManagement) {
 		this.configManagement = configManagement;
 	}
 
@@ -127,26 +124,34 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 */
 	@Override
 	public List<Statistics> getMultipleStatistics() throws Exception {
+		long startTime = System.currentTimeMillis();
 		ExtendedStatistics extendedStatistics = new ExtendedStatistics();
 		List<AdvancedControllableProperty> advancedControllableProperty = new ArrayList<>();
 		Map<String, String> stats = new HashMap<>();
 		Map<String, String> controlStats = new HashMap<>();
 		reentrantLock.lock();
 		try {
-			convertConfigManagement();
 			if (!isEmergencyDelivery) {
 				retrieveMonitoring();
 			}
 			populateMonitoringAndControlling(stats, controlStats, advancedControllableProperty);
-			if (isConfigManagement) {
-				stats.putAll(controlStats);
+			stats.putAll(controlStats);
+			if (configManagement) {
 				extendedStatistics.setControllableProperties(advancedControllableProperty);
+			} else {
+				// If we send blank controllableProperties to SY, after having some properties in the db, SY core will ignore new batch and
+				// controllable properties will be still shown. This dummy entry is a workaround that re-records that original saved batch
+				extendedStatistics.setControllableProperties(Arrays.asList(createText(DaLiteConstant.EMPTY, DaLiteConstant.EMPTY)));
 			}
 			extendedStatistics.setStatistics(stats);
 			localExtendedStatistics = extendedStatistics;
 			isEmergencyDelivery = false;
 		} finally {
 			reentrantLock.unlock();
+		}
+		long endTime = System.currentTimeMillis();
+		if (logger.isDebugEnabled()) {
+			logger.debug(String.format("Dalite getMultipleStatistics(): %sms", endTime-startTime));
 		}
 		return Collections.singletonList(localExtendedStatistics);
 	}
@@ -274,8 +279,8 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 					}
 					data = handleResponse(command.getCommand(), data);
 					addAdvancedControlProperties(advancedControllableProperty, controlStats,
-							createSlider(controlStats, DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "Position(%)", "0", "100", 0f, 100f, Float.valueOf(data)), data);
-					controlStats.put(DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "PositionCurrentValue(%)", data);
+							createSlider(DaLiteConstant.SCREEN_CONTROL + DaLiteConstant.HASH + "Position(%)", "0", "100", 0f, 100f, Float.valueOf(data)), data);
+					controlStats.put(DaLiteConstant.SYSTEM + DaLiteConstant.HASH + "PositionCurrentValue(%)", data);
 					break;
 				case PRESET_NAME:
 					for (int i = 1; i <= numberOfPreset; i++) {
@@ -422,7 +427,7 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	 */
 	private void retrieveMonitoring() throws FailedLoginException {
 		for (DaLiteCommand command : DaLiteCommand.values()) {
-			if (command.isMonitoring() || isConfigManagement) {
+			if (command.isMonitoring() || configManagement) {
 				if (command.equals(DaLiteCommand.PRESET_NAME)) {
 					for (int i = 1; i <= numberOfPreset; i++) {
 						sendCommandDetails(String.format(command.getCommand(), i), "Preset" + i);
@@ -454,13 +459,6 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	}
 
 	/**
-	 * This method is used to validate input config management from user
-	 */
-	private void convertConfigManagement() {
-		isConfigManagement = StringUtils.isNotNullOrEmpty(this.configManagement) && this.configManagement.equalsIgnoreCase(DaLiteConstant.TRUE);
-	}
-
-	/**
 	 * Updates the list of advanced controllable properties and the stats map with the given property and value.
 	 * Removes any existing property with the same name before adding the new one.
 	 *
@@ -489,13 +487,11 @@ public class DaliteScreenControllerCommunicator extends SshCommunicator implemen
 	/***
 	 * Create AdvancedControllableProperty slider instance
 	 *
-	 * @param stats extended statistics
 	 * @param name name of the control
 	 * @param initialValue initial value of the control
 	 * @return AdvancedControllableProperty slider instance
 	 */
-	private AdvancedControllableProperty createSlider(Map<String, String> stats, String name, String labelStart, String labelEnd, Float rangeStart, Float rangeEnd, Float initialValue) {
-		stats.put(name, initialValue.toString());
+	private AdvancedControllableProperty createSlider(String name, String labelStart, String labelEnd, Float rangeStart, Float rangeEnd, Float initialValue) {
 		AdvancedControllableProperty.Slider slider = new AdvancedControllableProperty.Slider();
 		slider.setLabelStart(labelStart);
 		slider.setLabelEnd(labelEnd);

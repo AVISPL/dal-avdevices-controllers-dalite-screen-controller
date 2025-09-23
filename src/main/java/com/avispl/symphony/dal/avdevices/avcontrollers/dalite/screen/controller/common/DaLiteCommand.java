@@ -18,7 +18,7 @@ public enum DaLiteCommand {
 	FACTORY_RESET("FactoryReset", "system factory-reset get", true),
 	SCREEN_INFO("ScreenInfo", "screen get-info", true),
 	SERIAL_NUMBER("SerialNumber", "system serial-number", true),
-	SCREEN_POSITION("ScreenPosition", "screen position get", false),
+	SCREEN_POSITION("ScreenPosition", "screen position get", true),
 	PRESET_NAME("ScreenPreset", "screen preset name %s get", true),
 	;
 
